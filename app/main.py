@@ -29,8 +29,6 @@ async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "proxies": proxies_text, "proxy_count": proxy_count})
 
 
-
-
 @app.websocket("/ws/check_proxies")
 async def websocket_check_proxies(websocket: WebSocket):
     # logger.debug("WebSocket соединение установлено")
@@ -154,7 +152,7 @@ async def handle_proxies(request: Request, proxies: str = Form(...), action: str
 async def save_proxies(request: Request, proxies: str = Form(...), use_proxy: str = Form(None)):
     proxies_list = [line.strip() for line in proxies.split("\n") if line.strip()]
     ProxyManager.save_proxies(proxies_list)
-    return RedirectResponse("/#proxy", status_code=303)
+    return RedirectResponse("/", status_code=303)
     # return RedirectResponse("/", status_code=303)
 
 
