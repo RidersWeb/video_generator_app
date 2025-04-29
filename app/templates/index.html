@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Прокси и Скачивание Видео</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">    
+    <style>
+        .container {
+            max-width: 900px;
+            margin-top: 50px;
+        }
+        .result {
+            margin-top: 10px;
+        }
+        .result p {
+            margin: 0;
+        }
+        .form-group textarea {
+            min-height: 120px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-5">Скачивание Видео</h1>
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <!-- Главная кнопка табов -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">Главная</button>
+        </li>
+
+
+        <!-- Proxy кнопка табов -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="proxy-tab" data-bs-toggle="tab" data-bs-target="#proxy" type="button" role="tab" aria-controls="proxy" aria-selected="false">Прокси</button>
+        </li>
+
+
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab" aria-controls="contact" aria-selected="false">Контакт</button>
+        </li>
+      </ul>
+
+
+      <div class="tab-content" id="myTabContent">
+
+        <!-- Главная кнопка табов -->
+        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+                    <!-- Форма для ссылки на видео -->
+        <div class="form-group mt-4">
+            <label for="videoLink">Введите ссылку на видео:</label>
+            <input type="text" class="form-control" id="videoLink" placeholder="Введите ссылку на видео">
+        </div>
+
+        <div class="mt-3">
+            <button class="btn btn-success" id="downloadBtn" onclick="downloadVideo()">Скачать видео</button>
+        </div>
+        </div>
+        </div>
+        
+        <!-- Proxy кнопка табов -->
+        <div class="tab-pane fade" id="proxy" role="tabpanel" aria-labelledby="proxy-tab">
+            <div class="container">
+                <form method="post" action="/save_proxies" id="proxyForm">
+                    <div class="form-group">
+                        <textarea class="form-control" name="proxies" rows="5" placeholder="Введите прокси">{{ proxies }}</textarea>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-primary" type="submit" name="action" value="save">Save Proxies</button>
+                        <button class="btn btn-success" type="button" name="action" value="check" id="checkProxies">Check Proxies</button>
+        
+                    </div>
+                </form>                
+                <!-- Прогресс и счетчики -->
+                <div id="progressContainer" style="display: none; margin-top: 20px;">
+                    <div class="progress mb-2">
+                        <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;">0%</div>
+                    </div>
+                    <div>
+                        Проверено: <span id="checkedCount">0</span> |
+                        Всего: <span id="totalCount">0</span> |
+                        Живых: <span id="goodCount">0</span> |
+                        Мертвых: <span id="badCount">0</span>
+                    </div>
+                </div>
+
+                <div id="proxyResults" class="mt-3">
+                    <h5>Результаты проверки:</h5>
+                    <ul id="proxyList" class="list-group"></ul>
+                </div>
+                
+                
+            </div>
+        </div>
+        <!-- Контакт кнопка табов -->
+        <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
+            
+        </div>
+      </div>
+      </div>
+
+      <script>
+        document.getElementById('checkProxies').addEventListener('click', function() {
+            document.getElementById('progressContainer').style.display = 'block';
+        
+            const ws = new WebSocket(`ws://${location.host}/ws/check_proxies`);
+        
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+
+                // Обновляем прогресс
+                let percent = Math.floor((data.current / data.total) * 100);
+                document.getElementById('progressBar').style.width = percent + '%';
+                document.getElementById('progressBar').innerText = percent + '%';
+
+                // Обновляем счетчики
+                document.getElementById('checkedCount').innerText = data.current;
+                document.getElementById('totalCount').innerText = data.total;
+                document.getElementById('goodCount').innerText = data.good;
+                document.getElementById('badCount').innerText = data.bad;
+
+                // Добавляем прокси в список с подсветкой
+                const proxyList = document.getElementById('proxyList');
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item ' + (data.status === 'alive' ? 'list-group-item-success' : 'list-group-item-danger');
+                listItem.textContent = `${data.proxy} (${data.status === 'alive' ? 'Живой' : 'Мёртвый'})`;
+                proxyList.appendChild(listItem);
+            };
+
+        
+            ws.onclose = function(event) {
+                console.log("Проверка завершена!");
+            };
+        });
+
+        document.getElementById("stop-checker-btn").addEventListener("click", function() {
+        websocket.send(JSON.stringify({ action: "stop" }));
+        });
+
+
+        // Возврат кнопки табов
+        document.addEventListener('DOMContentLoaded', function () {
+        // При клике на таб сохраняем выбранный таб в localStorage
+        const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
+        tabButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            localStorage.setItem('activeTab', this.getAttribute('data-bs-target'));
+        });
+        });
+
+        // При загрузке страницы восстанавливаем активный таб
+        const activeTab = localStorage.getItem('activeTab');
+        if (activeTab) {
+        const tabTriggerEl = document.querySelector(`button[data-bs-target="${activeTab}"]`);
+        if (tabTriggerEl) {
+            const tab = new bootstrap.Tab(tabTriggerEl);
+            tab.show();
+        }
+        }
+  });
+
+
+
+
+
+
+        </script>
+        
+        
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Проверка прокси (отправка запроса на сервер)
+        function checkProxies() {
+            const proxies = document.getElementById('proxies').value.split('\n').map(p => p.trim()).filter(p => p !== '');
+            
+            if (proxies.length === 0) {
+                alert('Введите хотя бы один прокси!');
+                return;
+            }
+            
+            // Покажем прогресс-бар
+            document.getElementById('progressContainer').style.display = 'block';
+
+            // Отправим запрос на сервер для проверки прокси
+            fetch('/check_proxies', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ proxies })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Скрываем прогресс-бар
+                document.getElementById('progressContainer').style.display = 'none';
+                
+                const proxyResults = document.getElementById('proxyResults');
+                proxyResults.innerHTML = '';
+                
+                if (data.alive.length > 0) {
+                    data.alive.forEach(proxy => {
+                        const div = document.createElement('div');
+                        div.classList.add('result');
+                        div.innerHTML = `<p style="color: green;">Прокси работает: ${proxy}</p>`;
+                        proxyResults.appendChild(div);
+                    });
+                }
+                
+                if (data.dead.length > 0) {
+                    data.dead.forEach(proxy => {
+                        const div = document.createElement('div');
+                        div.classList.add('result');
+                        div.innerHTML = `<p style="color: red;">Прокси не работает: ${proxy}</p>`;
+                        proxyResults.appendChild(div);
+                    });
+                }
+            })
+            .catch(error => {
+                document.getElementById('progressContainer').style.display = 'none';
+                alert('Ошибка при проверке прокси!');
+            });
+        }
+
+        // Скачивание видео
+        function downloadVideo() {
+            const videoLink = document.getElementById('videoLink').value;
+            if (videoLink) {
+                alert(`Скачивание видео по ссылке: ${videoLink}`);
+                // Твоя логика для скачивания видео
+            } else {
+                alert('Введите ссылку на видео!');
+            }
+        }
+    </script>
+</body>
+</html>
