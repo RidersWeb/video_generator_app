@@ -1,5 +1,6 @@
 import asyncio
 import aiohttp
+from fastapi.responses import RedirectResponse
 from datetime import datetime
 from typing import List, Dict
 
@@ -28,47 +29,6 @@ class ProxyManager:
         open(ProxyManager.proxy_file, "w").close()
 
 
-    # @staticmethod
-    # async def check_proxy_fast(session, proxy, timeout=10):
-    #     try:
-    #         # Пытаемся подключиться к Google через прокси
-    #         async with session.get(
-    #             # "https://www.google.com",
-    #             'https://httpbin.org/ip',
-    #             proxy=f'http://{proxy}',
-    #             timeout=aiohttp.ClientTimeout(total=timeout)
-    #         ) as response:
-    #             # Если статус ответа 200 (OK), значит прокси рабочий
-    #             if response.status == 200:
-    #                 return True
-    #             else:
-    #                 return False
-    #     except Exception:  # Если ошибка (нет соединения, таймаут и т. д.)
-    #         return False
-
-
-
-    @staticmethod
-    async def check_proxy_type(session, proxy, timeout=10, test_site="httpbin"):
-        # Выбираем тестовый URL
-        test_url = "https://www.google.com" if test_site == "google" else "https://httpbin.org/ip"
-        
-        # Пробуем все типы прокси
-        for proxy_type in ["http", "https", "socks5"]:
-            try:
-                async with session.get(
-                    test_url,
-                    proxy=f"{proxy_type}://{proxy}",
-                    timeout=aiohttp.ClientTimeout(total=timeout)
-                ) as response:
-                    if response.status == 200:
-                        return proxy_type  # Возвращаем тип работающего прокси
-            except:
-                continue
-        
-        return None  # Прокси не рабочий ни в одном типе
-
-
     @staticmethod
     async def filter_alive_proxies(proxies):
         alive = []
@@ -83,6 +43,15 @@ class ProxyManager:
             else:
                 dead.append(proxy)
         return alive, dead
+    
+    # @staticmethod
+    # def write_proxy(proxies):
+    #     try:
+    #         with open(ProxyManager.proxy_file, "a+") as f:
+    #             for proxy in proxies:
+    #                 f.write(f"{proxy}\n")
+    #     except Exception as e:
+    #         print(f"Ошибка при сохранении прокси: {e}")
 
     @staticmethod
     def save_proxies(proxies):

@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Прокси и Скачивание Видео</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">   
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+ 
     <style>
         .container {
             max-width: 900px;
@@ -63,26 +65,78 @@
         <div class="tab-pane fade" id="proxy" role="tabpanel" aria-labelledby="proxy-tab">
             <div class="container">
                 <form method="post" action="/save_proxies" id="proxyForm">
-                    <div class="form-group">
-                        <div>Сейчас в файле {{ proxy_count }} прокси</div>
+                   
+                    <div class="form-group d-flex align-items-center justify-content-between gap-3 mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                          <span>Сейчас в файле {{ proxy_count }} прокси</span>
+                          <span class="vr"></span> <!-- Вертикальный разделитель -->
+                        </div>
+                        <div class="d-flex align-items-center gap-3 flex-nowrap">
+                          <span class="text-nowrap">Парсим прокси</span>
+                          <input type="number" id="countproxy" class="form-control" value="100" min="1" max="500" style="width: 100px;">
+                          <select id="TypeProxyFind" class="form-select" aria-label="Default select example" style="width: 120px;">
+                            <option value="Google">http</option>
+                            <option value="httpbin">https</option>
+                            <option value="Yandex">Socks5</option>
+                          </select>
+                          <button type="button" class="btn btn-success" id="startParsing">Собрать прокси</button>
+                          <!-- <a href="/download_proxies" class="btn btn-success px-4">Собрать прокси</a> -->
+                        </div>
+                      </div>
+
                         <textarea id="proxyInput" class="form-control" name="proxies" rows="5" placeholder="Введите прокси">{{ proxies }}</textarea>
-                    </div>
-                    <div class="mt-3">
-                        <label for="proxyType">Тип прокси:</label>
-                        <select id="testSite" class="form-select" aria-label="Default select example">
+                    
+
+
+                    <div class="d-flex align-items-end gap-3 flex-nowrap">
+                        <!-- Сайт для проверки -->
+                        <div class="d-flex flex-column">
+                          <label class="form-label" for="testSite">Сайт для проверки:</label>
+                          <select id="testSite" class="form-select" aria-label="Default select example" style="width: 180px;">
                             <option value="Google">Проверяем через Google</option>
                             <option value="httpbin">Проверяем через httpbin</option>
                             <option value="Yandex">Проверяем через Yandex</option>
                           </select>
-                    </div>
+                        </div>
+                        
+                          <!-- <button class="btn btn-sm btn-outline-secondary mb-1" onclick="selectAll()">Выбрать все</button> -->
+                        
+                        <!-- Таймаут -->
+                        <div class="d-flex flex-column">
+                          <label class="form-label" for="timeout">Таймаут (сек):</label>
+                          <input type="number" id="timeout" class="form-control" value="5" min="1" max="30" style="width: 100px;">
+                        </div>
+                        <!-- Лимит потоков -->
+                        <div class="d-flex flex-column">
+                          <label class="form-label" for="concurrencyLimit">Лимит потоков:</label>
+                          <input type="number" id="concurrencyLimit" class="form-control" value="100" min="1" max="500" style="width: 100px;">
+                        </div>
+                        <!-- Тип прокси (Select2) и кнопка "Выбрать все" -->
+                        <div class="d-flex align-items-end gap-3">
+                            <div class="d-flex flex-column">
+                              <label for="TypeProxyCheck" class="form-label">Тип прокси:</label>
+                              <select id="TypeProxyCheck" class="form-select" multiple="multiple">
+                                <option value="http" selected>HTTP</option>
+                                <option value="socks4">SOCKS4</option>
+                                <option value="socks5">SOCKS5</option>
+                              </select>
+                            </div>
+                        </div>
+                      </div>
+                    
+
+
+                    
+                
                     <div class="mt-3">
                         <button class="btn btn-primary" type="submit" name="action" value="save">Save Proxies</button>
                         <button class="btn btn-success" type="button" name="action" value="check" id="checkProxies">Check Proxies</button>
                         <button id="clearBtn" class="btn btn-secondary">Очистить список</button>
                         <button id="stopBtn" class="btn btn-danger">Остановить проверку</button>
-                        
-        
                     </div>
+
+
+
                 </form>                
                 <!-- Прогресс и счетчики -->
                 <div id="progressContainer" style="display: none; margin-top: 20px;">
@@ -111,143 +165,126 @@
         </div>
       </div>
       </div>
+    </div>
 
 
 
 
+      <!-- Подключение jQuery (требуется для Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+      <!-- Подключение Select2 CSS и JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 
-
+      
+      
 
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Обработчик для кнопки проверки прокси
-    document.getElementById('checkProxies').addEventListener('click', function() {
-        document.getElementById('progressContainer').style.display = 'block';
+    document.addEventListener('DOMContentLoaded', function () {
+        // Обработчик для кнопки проверки прокси
+        document.getElementById('checkProxies').addEventListener('click', function () {
+            document.getElementById('progressContainer').style.display = 'block';
 
-        const testSite = document.getElementById('testSite').value.toLowerCase();
-        const ws = new WebSocket(`ws://${location.host}/ws/check_proxies?site=${testSite}`);
-    
-        ws.onmessage = function(event) {
-            const data = JSON.parse(event.data);
+            const testSite = document.getElementById('testSite').value.toLowerCase();
+            const TypeProxyCheck = document.getElementById('TypeProxyCheck').value.toLowerCase();
 
-            // Пропускаем сообщения без proxy
-            if (!data.proxy) return;  // ⚠️ Важно: не добавляем, если proxy нет
 
-            // Обновляем прогресс
-            let percent = Math.floor((data.current / data.total) * 100);
-            document.getElementById('progressBar').style.width = percent + '%';
-            document.getElementById('progressBar').innerText = percent + '%';
-            // Обновляем счетчики
-            document.getElementById('checkedCount').innerText = data.checked;
-            document.getElementById('totalCount').innerText = data.total;
-            document.getElementById('goodCount').innerText = data.good;
-            document.getElementById('badCount').innerText = data.bad;
-            // Добавляем прокси в список с подсветкой
-            const proxyList = document.getElementById('proxyList');
-            const listItem = document.createElement('li');
-            listItem.className = 'list-group-item ' + (data.status === 'alive' ? 'list-group-item-success' : 'list-group-item-danger');
-            listItem.textContent = `${data.proxy} (${data.status === 'alive' ? 'Живой' : 'Мёртвый'})`;
-            proxyList.appendChild(listItem);
-        };
-    
-        ws.onclose = function(event) {
-            console.log("Проверка завершена!");
-            // document.getElementById('checkBtn').disabled = false;
-            // document.getElementById('stopBtn').disabled = true;
-        };
+            const ws = new WebSocket(`ws://${location.host}/ws/check_proxies?site=${testSite}`);
 
-        // Обработчик для кнопки остановки (исправлено: websocket → ws)
-        document.getElementById("stop-checker-btn").addEventListener("click", function() {
-            ws.send(JSON.stringify({ action: "stop" }));
-        }); // Закрывающая скобка для обработчика stop-checker-btn
-    }); // Закрывающая скобка для обработчика checkProxies
+            ws.onmessage = function (event) {
+                const data = JSON.parse(event.data);
 
-    // Обработчики для табов (вынесено из вложенности)
-    const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            localStorage.setItem('activeTab', this.getAttribute('data-bs-target'));
+                // Пропускаем сообщения без proxy
+                if (!data.proxy) return;  // ⚠️ Важно: не добавляем, если proxy нет
+
+                // Обновляем прогресс
+                let percent = Math.floor((data.current / data.total) * 100);
+                document.getElementById('progressBar').style.width = percent + '%';
+                document.getElementById('progressBar').innerText = percent + '%';
+                // Обновляем счетчики
+                document.getElementById('checkedCount').innerText = data.checked;
+                document.getElementById('totalCount').innerText = data.total;
+                document.getElementById('goodCount').innerText = data.good;
+                document.getElementById('badCount').innerText = data.bad;
+                // Добавляем прокси в список с подсветкой
+                const proxyList = document.getElementById('proxyList');
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item ' + (data.status === 'alive' ? 'list-group-item-success' : 'list-group-item-danger');
+                listItem.textContent = `${data.proxy} (${data.status === 'alive' ? 'Живой' : 'Мёртвый'})`;
+                proxyList.appendChild(listItem);
+            };
+
+            ws.onclose = function (event) {
+                console.log("Проверка завершена!");
+            };
+
+            // Обработчик для кнопки остановки (исправлено: websocket → ws)
+            document.getElementById("stop-checker-btn").addEventListener("click", function () {
+                ws.send(JSON.stringify({ action: "stop" }));
+            }); // Закрывающая скобка для обработчика stop-checker-btn
+        }); // Закрывающая скобка для обработчика checkProxies
+
+        // Обработчики для табов (вынесено из вложенности)
+        const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                localStorage.setItem('activeTab', this.getAttribute('data-bs-target'));
+            });
         });
-    });
-    
-    // Восстановление активного таба
-    const activeTab = localStorage.getItem('activeTab');
-    if (activeTab) {
-        const tabTriggerEl = document.querySelector(`button[data-bs-target="${activeTab}"]`);
-        if (tabTriggerEl && tabTriggerEl.getAttribute('data-bs-target') === activeTab) {
-            const tab = new bootstrap.Tab(tabTriggerEl);
-            tab.show();
-        }
-    }
 
-    document.getElementById('proxyInput').addEventListener('paste', function(e) {
-    e.preventDefault();
-    const text = (e.clipboardData || window.clipboardData).getData('text');
-    const cleanedText = cleanProxyList(text);
-    this.value = cleanedText;
+        // Восстановление активного таба
+        const activeTab = localStorage.getItem('activeTab');
+        if (activeTab) {
+            const tabTriggerEl = document.querySelector(`button[data-bs-target="${activeTab}"]`);
+            if (tabTriggerEl && tabTriggerEl.getAttribute('data-bs-target') === activeTab) {
+                const tab = new bootstrap.Tab(tabTriggerEl);
+                tab.show();
+            }
+        }
+
+
+
+        // Кнопка Стоп
+        document.getElementById('stopBtn').addEventListener('click', function () {
+            if (ws) {
+                ws.close(); // Закрываем соединение
+                document.getElementById('stopBtn').disabled = true;
+                document.getElementById('checkBtn').disabled = false;
+                console.log('Проверка остановлена');
+            }
+        });
+
+    }); // Закрывающая скобка для DOMContentLoaded
+
+
+// Обработчик для списка меню для проверки типа прокси
+$(document).ready(function () {
+  $('#TypeProxyCheck').select2({
+    placeholder: "Выберите типы прокси",
+    allowClear: true,
+    width: '100%',
+    closeOnSelect: false // Не закрывать dropdown после выбора
+  });
+
+  // Добавление кнопки "Выбрать все" в интерфейс Select2
+//   $('.select2-container').after(
+//     '<button class="btn btn-sm btn-outline-secondary mt-1" onclick="selectAll()">Выбрать все</button>'
+//   );
+
+  window.selectAll = function () {
+    $('#TypeProxyCheck').val(['http', 'socks4', 'socks5']).trigger('change');
+  };
 });
 
-    function cleanProxyList(text) {
-        // Регулярное выражение для:
-        // 1. ip:port
-        // 2. ip:port:login:pass
-        const proxyRegex = /^(?:\d{1,3}\.){3}\d{1,3}:\d{1,5}(?::[^\s:]+:[^\s:]+)?$/gm;
-        
-        return text.split('\n')
-            .map(line => line.trim())
-            .filter(line => {
-                // Проверяем соответствие формату прокси
-                if (proxyRegex.test(line)) {
-                    return true;
-                }
-                // Дополнительная проверка для строк с пробелами
-                const parts = line.split(/\s+/);
-                return parts.some(part => proxyRegex.test(part));
-            })
-            .map(line => {
-                // Извлекаем только прокси (если были лишние слова)
-                const match = line.match(proxyRegex);
-                return match ? match[0] : line;
-            })
-            .join('\n');
-    
-    }
-
-
-
-    document.getElementById('clearBtn').addEventListener('click', function() {
-        document.getElementById('proxyInput').value = '';
-        document.getElementById('goodProxies').value = '';
-        document.getElementById('badProxies').value = '';
-        document.getElementById('goodCount').textContent = '0';
-        document.getElementById('badCount').textContent = '0';
-        document.getElementById('progressBar').style.width = '0%';
-        document.getElementById('progressBar').innerText = '0%';
-    });
-
-    // Кнопка Стоп
-    document.getElementById('stopBtn').addEventListener('click', function() {
-        if (ws) {
-            ws.close(); // Закрываем соединение
-            document.getElementById('stopBtn').disabled = true;
-            document.getElementById('checkBtn').disabled = false;
-            console.log('Проверка остановлена');
-        }
-    });
-
-
-
-
-}); // Закрывающая скобка для DOMContentLoaded
 </script>
-        
-        
 
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+        
+        
+
+
 <!-- <script>
 
     // Скачивание видео
