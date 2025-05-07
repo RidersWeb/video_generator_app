@@ -32,38 +32,12 @@ async def read_root(request: Request):
     proxies_text = "\n".join(proxies)   # превращаем список в одну строку
     return templates.TemplateResponse("index.html", {"request": request, "proxies": proxies_text, "proxy_count": proxy_count})
 
-# @app.post("/check-proxies", response_class=HTMLResponse)
-# async def check_proxies(
-#     request: Request,
-#     test_site: str = Form(...),
-#     proxy_types: list = Form(...),
-#     timeout: int = Form(...),
-#     proxies: str = Form(...)):
-#     print(f"Received form data: {proxies}")
 
 
 @app.websocket("/ws/check_proxies")
 async def websocket_check_proxies(websocket: WebSocket):
     await websocket.accept()
     print("WebSocket connection established")
-
-    # Получаем начальные данные от клиента
-    # init_data = await websocket.receive_json()
-    # print(f"Received initial data: {init_data}")
-
-
-    # Получаем настройки от клиента
-    # init_data = await websocket.receive_json()
-    # settings = init_data['settings']
-    # proxies = init_data['proxies']
-    # print(f"Settings: {settings}")
-    # Настройки проверки
-    # CONCURRENCY_LIMIT = settings.get('concurrencyLimit', 100)
-    # print(f"CONCURRENCY_LIMIT: {CONCURRENCY_LIMIT}")
-    # TIMEOUT = settings.get('timeout', 5)
-    # print(f"TIMEOUT: {TIMEOUT}")
-    # PROXY_TYPES = settings.get('proxyTypes', ['http'])
-    # print(f"PROXY_TYPES: {PROXY_TYPES}")
 
     test_site = websocket.query_params.get("site")
 
@@ -92,26 +66,46 @@ async def websocket_check_proxies(websocket: WebSocket):
                     if proxy.count(':') >= 3:  # Формат ip:port:login:pass
                         ip_port, login, password = proxy.rsplit(':', 2)
                         proxy_auth = f"{login}:{password}@"
+                    elif proxy.count(':') == 2:  # Формат  тип:port:port
+                        type_proxy, ip_port = proxy.split(':')
+                        # type_ip_port = f"{type_proxy}:{ip_port}"
+                        proxy_auth = ""
                     else:
+                        type_proxy = _get_url(test_site)
                         ip_port = proxy
                         proxy_auth = ""
                     
-                    for proxy_type in PROXY_TYPES:
-                        try:
-                            async with session.get(
-                                _get_url(test_site),
-                                # Модифицированная строка прокси:
-                                # 
-                                proxy=f"http://{proxy_auth}{ip_port}",
-                                timeout=TIMEOUT
+                    try:
+                        async with session.get(
+                            _get_url(test_site),
+                            # Модифицированная строка прокси: 
+                            proxy=f"http://{proxy_auth}{ip_port}",
+                            timeout=TIMEOUT
                             ) as resp:
                                 if resp.status == 200:
                                     return proxy, proxy_type, True
-                        except:
-                            continue
-                    return proxy, None, False
+                    except Exception:
+                        return proxy, None, False
                 except Exception:
                     return proxy, None, False
+                    
+                    
+                #     for proxy_type in PROXY_TYPES:
+                #         try:
+                #             async with session.get(
+                #                 _get_url(test_site),
+                #                 # Модифицированная строка прокси:
+                #                 # 
+                #                 proxy=f"http://{proxy_auth}{ip_port}",
+                #                 timeout=TIMEOUT
+                #             ) as resp:
+                #                 if resp.status == 200:
+                #                     return proxy, proxy_type, True
+                #         except:
+                #             continue
+                #     return proxy, None, False
+                # except Exception:
+                #     return proxy, None, False
 
         tasks = [check_proxy(proxy) for proxy in proxies]
         good = 0
@@ -161,6 +155,21 @@ async def websocket_check_proxies(websocket: WebSocket):
 
     ProxyManager.save_proxies(good_proxies)
     ProxyManager.load_proxies()
+
+
+# Парсинг прокси
+@app.websocket("/ws/parse_proxies")
+async def websocket_parse_proxies(websocket: WebSocket):
+    await websocket.accept()
+    print("WebSocket connection established for parsing proxies")
+    # Получаем данные от клиента
+    # init_data = await websocket.receive_json()
+    count_proxe_find = int(websocket.query_params.get("countproxy"))
+    type_proxy_find = websocket.query_params.get("TypeProxyFind")
+    # Получаем данные от сайта
+    ProxyManager.save_proxies(ProxyManager.find_proxy(type_proxy_find, count_proxe_find))
+    ProxyManager.load_proxies()
+    
 
 
 
