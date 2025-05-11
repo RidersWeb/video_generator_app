@@ -64,27 +64,27 @@
         <!-- Proxy кнопка табов -->
         <div class="tab-pane fade" id="proxy" role="tabpanel" aria-labelledby="proxy-tab">
             <div class="container">
-                <form method="post" action="/save_proxies" id="proxyForm">
-                   
+                <form>
                     <div class="form-group d-flex align-items-center justify-content-between gap-3 mb-3">
                         <div class="d-flex align-items-center gap-2">
-                          <span>Сейчас в файле {{ proxy_count }} прокси</span>
+                          <span id="nowproxy">Сейчас в файле {{ proxy_count }} прокси</span>
                           <span class="vr"></span> <!-- Вертикальный разделитель -->
                         </div>
                         <div class="d-flex align-items-center gap-3 flex-nowrap">
                           <span class="text-nowrap">Парсим прокси</span>
-                          <input type="number" id="countproxy" class="form-control" value="100" min="1" max="500" style="width: 100px;">
+                          <input type="number" id="CountProxy" class="form-control" value="10" min="1" max="500" style="width: 100px;">
                           <select id="TypeProxyFind" class="form-select" aria-label="Default select example" style="width: 120px;">
-                            <option value="http">http</option>
-                            <option value="https">https</option>
-                            <option value="socks5">Socks5</option>
+                            <option value="all">Все</option>
+                            <option value="http://">http</option>
+                            <option value="https://">https</option>
+                            <option value="socks5://">Socks5</option>
                           </select>
-                          <button type="button" class="btn btn-success" id="startParsing">Собрать прокси</button>
+                          <button type="button" class="btn btn-success" id="StartParsing">Собрать прокси</button>
                           <!-- <a href="/download_proxies" class="btn btn-success px-4">Собрать прокси</a> -->
                         </div>
                       </div>
 
-                        <textarea id="proxyInput" class="form-control" name="proxies" rows="5" placeholder="Введите прокси">{{ proxies }}</textarea>
+                        <textarea id="proxyInput" class="form-control" name="proxies" rows="5" placeholder="Введите прокси">{% if proxies %}{{ proxies }}{% endif %}</textarea>
                     
 
 
@@ -93,8 +93,8 @@
                         <div class="d-flex flex-column">
                           <label class="form-label" for="testSite">Сайт для проверки:</label>
                           <select id="testSite" class="form-select" aria-label="Default select example" style="width: 180px;">
-                            <option value="Google">Проверяем через Google</option>
-                            <option value="httpbin">Проверяем через httpbin</option>
+                            <option value="https://google.com/">Проверяем через Google</option>
+                            <option value="http://httpbin.org/ip">Проверяем через httpbin</option>
                             <option value="Yandex">Проверяем через Yandex</option>
                           </select>
                         </div>
@@ -104,7 +104,7 @@
                         <!-- Таймаут -->
                         <div class="d-flex flex-column">
                           <label class="form-label" for="timeout">Таймаут (сек):</label>
-                          <input type="number" id="timeout" class="form-control" value="5" min="1" max="30" style="width: 100px;">
+                          <input type="number" id="intTimeout" class="form-control" value="5" min="1" max="30" style="width: 100px;">
                         </div>
                         <!-- Лимит потоков -->
                         <div class="d-flex flex-column">
@@ -117,7 +117,7 @@
                               <label for="TypeProxyCheck" class="form-label">Тип прокси:</label>
                               <select id="TypeProxyCheck" class="form-select" multiple="multiple">
                                 <option value="http" selected>HTTP</option>
-                                <option value="socks4">SOCKS4</option>
+                                <option value="https">HTTPS</option>
                                 <option value="socks5">SOCKS5</option>
                               </select>
                             </div>
@@ -129,9 +129,9 @@
                     
                 
                     <div class="mt-3">
-                        <button class="btn btn-primary" type="submit" name="action" value="save">Save Proxies</button>
+                        <button id="saveproxy" type="button" class="btn btn-primary" name="action" value="save">Save Proxies</button>
                         <button class="btn btn-success" type="button" name="action" value="check" id="checkProxies">Check Proxies</button>
-                        <button id="clearBtn" class="btn btn-secondary">Очистить список</button>
+                        <button id="clearBtn" type="submit" formaction="/clear"  class="btn btn-secondary">Очистить список</button>
                         <button id="stopBtn" class="btn btn-danger">Остановить проверку</button>
                     </div>
 
@@ -174,138 +174,10 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
       <!-- Подключение Select2 CSS и JS -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-
-      
-      
-
-
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    // Спарсиьть прокси с сайтов
-    document.getElementById('startParsing').addEventListener('click', function () {
-      const countproxy = document.getElementById('countproxy').value;
-      const TypeProxyFind = document.getElementById('TypeProxyFind').value.toLowerCase();
-      const ws = new WebSocket(`ws://${location.host}/ws/parse_proxies?countproxy=${countproxy}&TypeProxyFind=${TypeProxyFind}`);
-      // document.getElementById('countproxy').disabled = true;
-      // document.getElementById('TypeProxyFind').disabled = true;
-
-      ws.onmessage = function (event) {
-        const data = JSON.parse(event.data);
-        const proxyList = document.getElementById('proxyList');}
-    });
-    //  const countproxy = document.getElementById('countproxy').value;
-    //  const TypeProxyFind = document.getElementById('TypeProxyFind').value.toLowerCase();
-    //  const ws = new WebSocket(`ws://${location.host}/ws/parse_proxies?count=${countproxy}&TypeProxyFind=${TypeProxyFind}`)};
-    //  ws.onmessage = function (event) {
-    //    const data = JSON.parse(event.data)};
-    //    )};
-
-
-
-
-
-    // Обработчик для кнопки проверки прокси
-    document.getElementById('checkProxies').addEventListener('click', function () {
-        document.getElementById('progressContainer').style.display = 'block'
-        const testSite = document.getElementById('testSite').value.toLowerCase();
-        const TypeProxyCheck = document.getElementById('TypeProxyCheck').value.toLowerCase()
-        const ws = new WebSocket(`ws://${location.host}/ws/check_proxies?site=${testSite}`)
-        ws.onmessage = function (event) {
-            const data = JSON.parse(event.data)
-            // Пропускаем сообщения без proxy
-            if (!data.proxy) return;  // ⚠️ Важно: не добавляем, если proxy не
-            // Обновляем прогресс
-            let percent = Math.floor((data.current / data.total) * 100);
-            document.getElementById('progressBar').style.width = percent + '%';
-            document.getElementById('progressBar').innerText = percent + '%';
-            // Обновляем счетчики
-            document.getElementById('checkedCount').innerText = data.checked;
-            document.getElementById('totalCount').innerText = data.total;
-            document.getElementById('goodCount').innerText = data.good;
-            document.getElementById('badCount').innerText = data.bad;
-            // Добавляем прокси в список с подсветкой
-            const proxyList = document.getElementById('proxyList');
-            const listItem = document.createElement('li');
-            listItem.className = 'list-group-item ' + (data.status === 'alive' ? 'list-group-item-success' : 'list-group-item-danger');
-            listItem.textContent = `${data.proxy} (${data.status === 'alive' ? 'Живой' : 'Мёртвый'})`;
-            proxyList.appendChild(listItem);
-        }
-        ws.onclose = function (event) {
-            console.log("Проверка завершена!");
-        }
-        // Обработчик для кнопки остановки (исправлено: websocket → ws)
-        document.getElementById("stop-checker-btn").addEventListener("click", function () {
-            ws.send(JSON.stringify({ action: "stop" }));
-        }); // Закрывающая скобка для обработчика stop-checker-btn
-    
-    
-    
-    
-}); // Закрывающая скобка для обработчика checkProxie
-    
-    // Обработчики для табов (вынесено из вложенности)
-    const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
-    tabButtons.forEach(button => {button.addEventListener('click', function () {
-      localStorage.setItem('activeTab', this.getAttribute('data-bs-target'));
-    });
-    });
-    // Восстановление активного таба
-    const activeTab = localStorage.getItem('activeTab');
-    if (activeTab) {
-      const tabTriggerEl = document.querySelector(`button[data-bs-target="${activeTab}"]`);
-      if (tabTriggerEl && tabTriggerEl.getAttribute('data-bs-target') === activeTab) {
-        const tab = new bootstrap.Tab(tabTriggerEl);
-          tab.show();
-        }
-      }
-
-
-
-    // Кнопка Стоп
-    document.getElementById('stopBtn').addEventListener('click', function () {
-        if (ws) {
-            ws.close(); // Закрываем соединение
-            document.getElementById('stopBtn').disabled = true;
-            document.getElementById('checkBtn').disabled = false;
-            console.log('Проверка остановлена');
-        }
-    });
-
-    // Обработчик для списка меню для проверки типа прокси
-    $(document).ready(function () {
-      $('#TypeProxyCheck').select2({
-        placeholder: "Выберите типы прокси",
-        allowClear: true,
-        width: '100%',
-        closeOnSelect: false // Не закрывать dropdown после выбора
-      });
-    
-    window.selectAll = function () {
-      $('#TypeProxyCheck').val(['http', 'socks4', 'socks5']).trigger('change');
-    };
-    }); // Закрывающая скобка для $(document).ready
-}); // Закрывающая скобка для DOMContentLoaded
-</script>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-        
-        
 
+<script src="/static/scripts.js"></script>
 
-<!-- <script>
-
-    // Скачивание видео
-    function downloadVideo() {
-        const videoLink = document.getElementById('videoLink').value;
-        if (videoLink) {
-            alert(`Скачивание видео по ссылке: ${videoLink}`);
-            // Твоя логика для скачивания видео
-        } else {
-            alert('Введите ссылку на видео!');
-        }
-    }
-</script> -->
 </body>
 </html>
