@@ -1,6 +1,6 @@
 .PHONY: run install
 
-run:
+start:
 	uvicorn app.main:app --reload
 
 install:
@@ -8,3 +8,5 @@ install:
 
 kill:
 	lsof -t -i :8000 | xargs kill -9
+
+run: kill start

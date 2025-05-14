@@ -57,17 +57,21 @@ document.getElementById('checkProxies').addEventListener('click', function () {
     const intTimeout = document.getElementById('intTimeout').value;
     const concurrencyLimit = document.getElementById('concurrencyLimit').value;
     document.getElementById('progressContainer').style.display = 'block';
-    const TypeProxyCheck = Array.from(document.getElementById('TypeProxyCheck').selectedOptions).map(option => option.value.toLowerCase());
-
+    const TypeProxyCheck = document.getElementById('TypeProxyCheck').value.toLowerCase();
+    const liveLimit = document.getElementById('liveLimit').value;
+    const proxyLimit = document.getElementById('proxyLimit').value;
 
     const ws = new WebSocket(`ws://${location.host}/ws/check_proxies`);
+
     
     ws.onopen = function () {
         ws.send(JSON.stringify({
             site: testSite,
             typeproxy: TypeProxyCheck,
             intTimeout: intTimeout,
-            concurrencyLimit: concurrencyLimit
+            concurrencyLimit: concurrencyLimit,
+            liveLimit: parseInt(liveLimit),
+            proxyLimit: parseInt(proxyLimit),
         }));
     };
 
@@ -92,7 +96,7 @@ document.getElementById('checkProxies').addEventListener('click', function () {
         if (data.status === 'alive') {
             const listItem = document.createElement('li');
             listItem.className = 'list-group-item list-group-item-success'; // Живой
-            listItem.textContent = `${data.proxy} (Живой)`;
+            listItem.innerHTML = `<strong>${data.proxy} (Живой)</strong><br><small>${data.user_agent}</small>`;
             proxyList.appendChild(listItem);
         }
         // listItem.className = 'list-group-item ' + (data.status === 'alive' ? 'list-group-item-success' : 'list-group-item-danger');
@@ -122,29 +126,13 @@ if (activeTab) {
     };
 };
 
-// Обработчик для списка меню для проверки типа прокси
-
-$(document).ready(function () {
-  $('#TypeProxyCheck').select2({
-    placeholder: "Выберите типы прокси",
-    allowClear: true,
-    width: '100%',
-    closeOnSelect: false // Не закрывать dropdown после выбора
-  });
-
-window.selectAll = function () {
-  $('#TypeProxyCheck').val(['http', 'socks4', 'socks5']).trigger('change');
-};
-}); // Закрывающая скобка для $(document).ready
 
 
-// Скачивание видео
-// function downloadVideo() {
-//     const videoLink = document.getElementById('videoLink').value;
-//     if (videoLink) {
-//         alert(`Скачивание видео по ссылке: ${videoLink}`);
-//         // Твоя логика для скачивания видео
-//     } else {
-//         alert('Введите ссылку на видео!');
-//     }
-// }
+
+
+
+
+
+// Yotube Thumbnail
+
+

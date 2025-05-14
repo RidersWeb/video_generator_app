@@ -1,0 +1,88 @@
+<!-- youtube.html -->
+<div class="container py-3">
+  <!-- Заголовок видео -->
+  <div class="mb-3">
+    <h5 id="video-title" class="fw-bold">Загрузка...</h5>
+    <p class="mb-1 text-muted">
+      Канал: <span id="channel-name"> {{ title }}</span> •
+        {% if subscriber_count %}
+            <p><strong>Подписчиков:</strong> {{ subscriber_count | int | format_number }}</p>
+        {% endif %}
+      <!-- Подписчиков: <span id="subscriber-count">{{ subscriber_count }}</span> -->
+    </p>
+  </div>
+
+  <!-- Встроенное видео -->
+
+  <div class="ratio ratio-16x9 mb-3" style="display:none;">
+    <iframe 
+        id="youtubeFrame" 
+        width="100%" 
+        height="400" 
+        src="https://www.youtube.com/embed/{{ video_id }}" 
+        frameborder="0" 
+        allowfullscreen>
+    </iframe>
+</div>
+
+  <!-- Метаданные видео -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      👍 <span id="like-count">{{ like_count }}</span>
+      👎 <span id="dislike-count">{{ dislike_count }}</span>
+    </div>
+        <!-- <a href="{{ audio_url }}" class="btn btn-outline-primary btn-sm" target="_blank">Скачать аудио</a>
+        <a href="{{ video_url }}" class="btn btn-outline-primary btn-sm" target="_blank">Скачать видео</a>
+        <a href="{{ thumbnail }}" class="btn btn-outline-primary btn-sm" target="_blank">Скачать превью</a> -->
+
+    <button onclick="downloadMedia(document.getElementById('videoLink').value, 'video')">
+        Скачать видео
+    </button>
+    <button onclick="downloadMedia(document.getElementById('videoLink').value, 'audio')">
+        Скачать аудио
+    </button>
+
+    
+    <button class="btn btn-outline-primary btn-sm" onclick="downloadAudio('YOUR_VIDEO_ID')">Скачать аудио</button>
+    <button class="btn btn-outline-primary btn-sm" onclick="downloadVideo('YOUR_VIDEO_ID')">Скачать видео</button>
+
+  </div>
+
+  <!-- Комментарии -->
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Комментарии (<span id="comment-count">{{ comment_count }}</span>)</span>
+      <select id="comment-sort" class="form-select form-select-sm w-auto">
+        <option value="newest">Сначала новые</option>
+        <option value="top">Популярные</option>
+      </select>
+    </div>
+    <ul class="list-group list-group-flush" id="comment-list">
+      <!-- Комментарии будут подгружены динамически -->
+    </ul>
+  </div>
+
+  <!-- Транскрипция -->
+  <div class="accordion mb-3" id="transcriptAccordion">
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="transcriptHeading">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#transcriptCollapse">
+          Транскрипция видео
+        </button>
+      </h2>
+      <div id="transcriptCollapse" class="accordion-collapse collapse" data-bs-parent="#transcriptAccordion">
+        <div class="accordion-body" id="transcript-text">
+          <!-- Текст будет загружен по кнопке -->
+          <button class="btn btn-outline-secondary btn-sm" onclick="loadTranscript()">Загрузить транскрипцию</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Управление -->
+  <div class="d-flex gap-2 flex-wrap">
+    <button class="btn btn-outline-success btn-sm" onclick="sliceVideo()">Нарезать по таймкодам</button>
+    <button class="btn btn-outline-primary btn-sm" onclick="createVoiceover()">Создать озвучку</button>
+    <button class="btn btn-outline-dark btn-sm" onclick="saveMetadata()">Сохранить с метаданными</button>
+  </div>
+</div>
