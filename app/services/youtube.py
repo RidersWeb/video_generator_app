@@ -70,15 +70,6 @@ async def embed_youtube(request: Request, data: VideoRequest):
 
 
 
-
-
-
-
-
-
-
-
-
 @router.get("/youtube/download")
 async def download_youtube(
     video_url: str,

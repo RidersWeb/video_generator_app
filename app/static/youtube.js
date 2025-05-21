@@ -1,12 +1,12 @@
 // // // youtube.js
-const input = document.getElementById('videoLink');
+// const input = document.getElementById('videoLink');
 
-input.addEventListener('keydown', async function(e) {
-    if (e.key === 'Enter') {
-        console.log(input)
-        await loadYouTubePage(input);
-    }
-});
+// input.addEventListener('keydown', async function(e) {
+//     if (e.key === 'Enter') {
+//         console.log(input)
+//         await loadYouTubePage(input);
+//     }
+// });
 
 async function loadYouTubePage(input) {
     const videoId = extractYouTubeId(input.value);

@@ -129,6 +129,50 @@ if (activeTab) {
 
 
 
+// Проверка URL на валидность и к какому сервису относится
+
+document.getElementById('videoLink').addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+      event.preventDefault(); // Отключаем стандартное поведение Enter
+      const url = event.target.value.trim();
+      const template = getTemplateByUrl(url);
+  
+      if (template) {
+        fetch(`/template/${template}`)
+          .then(res => res.text())
+          .then(html => {
+            document.getElementById('home').innerHTML = html;
+          })
+          .catch(err => {
+            console.error('Ошибка загрузки шаблона:', err);
+            alert('Не удалось загрузить шаблон');
+          });
+      } else {
+        alert('Сервис не поддерживается');
+      }
+    }
+  });
+  
+  function getTemplateByUrl(url) {
+    const videoServise = {
+      'youtube.com': 'youtube.html',
+      'youtu.be': 'youtube.html',
+      'vk.com': 'vk.html',
+      'vkontakte.ru': 'vk.html',
+      // Добавьте другие сервисы при необходимости
+    };
+  
+    for (const domain in videoServise) {
+      if (url.includes(domain)) {
+        return videoServise[domain];
+      }
+    }
+  
+    return null;
+  }
+  
+
+
 
 
 
